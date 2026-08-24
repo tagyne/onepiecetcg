@@ -1,0 +1,38 @@
+import 'reflect-metadata';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
+
+describe('deck DTO validation', () => {
+  it('accepts a structurally valid deck payload', async () => {
+    const dto = plainToInstance(DeckPayloadDto, {
+      name: 'Red deck',
+      leaderCardId: 'ST01-001',
+      cards: [{ cardId: 'ST01-002', quantity: 4 }],
+    });
+
+    await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+
+  it('rejects malformed deck payloads before service validation', async () => {
+    const dto = plainToInstance(DeckPayloadDto, {
+      name: '',
+      leaderCardId: 42,
+      cards: [{ cardId: 'ST01-002', quantity: 1.5 }],
+    });
+
+    const errors = await validate(dto);
+
+    expect(errors.map((error) => error.property)).toEqual(
+      expect.arrayContaining(['leaderCardId', 'cards']),
+    );
+  });
+
+  it('validates deck id route params as UUIDs', async () => {
+    const dto = plainToInstance(DeckIdParamDto, {
+      id: '1b10c4ba-7280-4d3b-a74e-15fbdbde0168',
+    });
+
+    await expect(validate(dto)).resolves.toHaveLength(0);
+  });
+});

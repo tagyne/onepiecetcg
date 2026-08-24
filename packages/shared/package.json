@@ -1,0 +1,29 @@
+{
+  "name": "@onepiecetcg/shared",
+  "version": "0.0.1",
+  "private": true,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/esm/index.js",
+      "require": "./dist/index.js",
+      "default": "./dist/esm/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
+    "dev": "concurrently -n cjs,esm \"tsc -p tsconfig.json --watch --preserveWatchOutput\" \"tsc -p tsconfig.esm.json --watch --preserveWatchOutput\"",
+    "postinstall": "tsc -p tsconfig.json && tsc -p tsconfig.esm.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest",
+    "test:run": "vitest run"
+  },
+  "dependencies": {
+    "@colyseus/schema": "^3.0.76"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.10"
+  }
+}

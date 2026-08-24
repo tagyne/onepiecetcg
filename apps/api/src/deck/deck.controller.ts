@@ -1,0 +1,66 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { AuthGuard } from '@thallesp/nestjs-better-auth';
+import type { Request } from 'express';
+import type { AuthenticatedUser } from '../player-account/player-account.service';
+import { DeckIdParamDto, DeckPayloadDto } from './deck.dto';
+import { DeckService } from './deck.service';
+
+type AuthenticatedRequest = Request & {
+  user: AuthenticatedUser;
+};
+
+@UseGuards(AuthGuard)
+@Controller('decks')
+export class DeckController {
+  constructor(private readonly decksService: DeckService) {}
+
+  @Get()
+  async list(@Req() request: AuthenticatedRequest) {
+    return { decks: await this.decksService.list(request.user) };
+  }
+
+  @Get(':id')
+  get(@Req() request: AuthenticatedRequest, @Param() params: DeckIdParamDto) {
+    return this.decksService.get(request.user, params.id);
+  }
+
+  @Post()
+  create(
+    @Req() request: AuthenticatedRequest,
+    @Body() payload: DeckPayloadDto,
+  ) {
+    return this.decksService.create(request.user, payload);
+  }
+
+  @Put(':id')
+  update(
+    @Req() request: AuthenticatedRequest,
+    @Param() params: DeckIdParamDto,
+    @Body() payload: DeckPayloadDto,
+  ) {
+    return this.decksService.update(request.user, params.id, payload);
+  }
+
+  @Delete(':id')
+  remove(
+    @Req() request: AuthenticatedRequest,
+    @Param() params: DeckIdParamDto,
+  ) {
+    return this.decksService.remove(request.user, params.id);
+  }
+
+  @Post('validate')
+  validate(@Body() payload: DeckPayloadDto) {
+    return this.decksService.validate(payload);
+  }
+}

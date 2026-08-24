@@ -1,0 +1,28 @@
+{
+  "name": "onepiecetcg",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "pnpm build:packages && pnpm -r --filter \"./apps/*\" build",
+    "build:packages": "pnpm -r --filter \"./packages/*\" build",
+    "dev": "concurrently -n packages,api,web -c blue,green,magenta \"pnpm --filter \\\"./packages/*\\\" run build && pnpm --filter \\\"./packages/*\\\" --parallel run dev\" \"wait-on packages/shared/dist/index.js packages/cards/dist/src/index.js packages/cards/dist/src/effects/index.js packages/duel-engine/dist/index.js packages/effect-engine/dist/index.js && pnpm --dir apps/api dev\" \"wait-on packages/shared/dist/index.js tcp:3000 && pnpm --dir apps/web dev\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@11.13.1",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.13.1",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "wait-on": "^9.1.0"
+  }
+}

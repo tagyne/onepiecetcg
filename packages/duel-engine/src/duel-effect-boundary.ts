@@ -1,0 +1,247 @@
+import type {
+  DuelCard,
+  DuelPlayer,
+  EffectDecisionResponse,
+} from '@onepiecetcg/shared';
+import {
+  EffectEngine,
+  type EffectEvent,
+  type EffectEngineState,
+  type EffectEventType,
+} from '@onepiecetcg/effect-engine';
+import {
+  createDuelEffectEngineHost,
+  type DuelEffectEngineHostDeps,
+} from './duel-effect-engine-host.js';
+import { DuelEffectEventDispatcher } from './duel-effect-event-dispatcher.js';
+import { effectRegistry } from './duel-effect-registry.js';
+import { DuelLifeCardResolutionEngine } from './duel-life-card-resolution-engine.js';
+import {
+  DuelManualTriggerManager,
+  type SerializedManualTriggerFallbackState,
+} from './duel-manual-trigger-manager.js';
+
+export type DuelEffectBoundaryDeps = DuelEffectEngineHostDeps & {
+  broadcastCardView: (card: DuelCard) => void;
+};
+
+export type DuelEffectBoundaryState = {
+  engine: EffectEngineState;
+  manualTrigger: SerializedManualTriggerFallbackState | null;
+};
+
+/**
+ * Explicit boundary between structural duel orchestration and the card-effect
+ * engine. This class translates gameplay windows into effect events and
+ * isolates the temporary manual Trigger fallback for cards that still lack a
+ * local definition.
+ */
+export class DuelEffectBoundary {
+  private readonly engine: EffectEngine;
+
+  private readonly manualTriggers: DuelManualTriggerManager;
+
+  private readonly lifeCards: DuelLifeCardResolutionEngine;
+
+  private readonly dispatcher: DuelEffectEventDispatcher;
+
+  public constructor(private readonly deps: DuelEffectBoundaryDeps) {
+    this.engine = new EffectEngine(
+      effectRegistry,
+      createDuelEffectEngineHost(deps),
+    );
+    this.dispatcher = new DuelEffectEventDispatcher({
+      state: deps.state,
+      emitCardEvent: (type, playerSessionId, card) =>
+        this.emitCardEvent(type, playerSessionId, card),
+    });
+    this.manualTriggers = new DuelManualTriggerManager({
+      state: deps.state,
+      addLog: deps.addLog,
+      getPlayer: deps.getPlayer,
+      syncPlayer: deps.syncPlayer,
+      moveCard: deps.moveCard,
+    });
+    this.lifeCards = new DuelLifeCardResolutionEngine({
+      addLog: deps.addLog,
+      syncPlayer: deps.syncPlayer,
+      moveCard: deps.moveCard,
+      hasLocalTriggerDefinition: (cardId) =>
+        this.dispatcher.hasLocalTriggerDefinition(cardId),
+      emitTriggerEvent: (playerSessionId, card) =>
+        this.emitCardEvent('trigger', playerSessionId, card),
+      queueManualTriggerFallback: (ownerSessionId, card, defenderDisplayName) =>
+        this.manualTriggers.queueLifeCardFallback(
+          ownerSessionId,
+          card,
+          defenderDisplayName,
+        ),
+    });
+  }
+
+  public hasPendingPlayerInteraction(): boolean {
+    return (
+      this.getPendingEffectDecision() !== null ||
+      this.manualTriggers.hasPendingInteraction()
+    );
+  }
+
+  public getPendingEffectDecision() {
+    return this.engine.getPendingDecision();
+  }
+
+  public answerEffectDecision(response: EffectDecisionResponse): void {
+    this.engine.answerDecision(response);
+  }
+
+  /**
+   * Clears the once-per-turn lock for every effect owned by one source card.
+   */
+  public clearResolvedOncePerTurnKeysForSource(
+    sourceInstanceId: string,
+  ): void {
+    this.engine.clearResolvedOncePerTurnKeysForSource(sourceInstanceId);
+  }
+
+  public reapplyContinuousEffects(): void {
+    this.engine.reapplyContinuousEffects();
+  }
+
+  public clearTurnModifiers(): void {
+    this.engine.clearTurnModifiers();
+  }
+
+  public clearTurnStartModifiers(playerSessionId: string): void {
+    this.engine.clearTurnStartModifiers(playerSessionId);
+  }
+
+  public clearCombatModifiers(): void {
+    this.engine.clearCombatModifiers();
+    this.manualTriggers.clear();
+  }
+
+  /** Exports the serializable mutable boundary state. */
+  public exportState(): DuelEffectBoundaryState {
+    return {
+      engine: this.engine.exportState(),
+      manualTrigger: this.manualTriggers.exportState(),
+    };
+  }
+
+  /** Restores a previously exported mutable boundary state. */
+  public importState(state: DuelEffectBoundaryState): void {
+    this.engine.importState(state.engine);
+    this.manualTriggers.importState(state.manualTrigger);
+  }
+
+  public applyKoReplacement(
+    playerSessionId: string,
+    sourceInstanceId: string,
+    reason: 'battle' | 'effect',
+  ): boolean {
+    return this.engine.applyReplacement({
+      type: 'wouldKoCharacter',
+      playerSessionId,
+      sourceInstanceId,
+      targetInstanceId: sourceInstanceId,
+      reason,
+    });
+  }
+
+  /**
+   * Applies a replacement effect before a card moves from one zone to another.
+   */
+  public applyMoveReplacement(
+    playerSessionId: string,
+    sourceInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+  ): boolean {
+    return this.engine.applyReplacement({
+      type: 'wouldMoveCard',
+      playerSessionId,
+      sourceInstanceId,
+      destinationPlayerSessionId,
+      destinationZone,
+    });
+  }
+
+  public emitCardEvent(
+    type: EffectEventType,
+    playerSessionId: string,
+    card: DuelCard,
+    context?: Pick<
+      EffectEvent,
+      'sourceZone' | 'targetInstanceId' | 'targetCardId' | 'playedByEffect'
+    >,
+  ): void {
+    this.engine.handleEvent({
+      type,
+      playerSessionId,
+      sourceInstanceId: card.instanceId,
+      sourceCardId: card.cardId,
+      ...context,
+    });
+  }
+
+  public emitWindowEffects(
+    type: 'onTurnStart' | 'onTurnEnd',
+    playerSessionId: string,
+  ): void {
+    this.dispatcher.emitWindowEffects(type, playerSessionId);
+  }
+
+  public emitPlayedCard(
+    playerSessionId: string,
+    card: DuelCard,
+    sourceZone: EffectEvent['sourceZone'] = 'hand',
+  ): void {
+    this.dispatcher.emitPlayedCard(playerSessionId, card, sourceZone);
+  }
+
+  public emitDonAttached(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onDonAttached', playerSessionId, card);
+  }
+
+  public emitDonReturned(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onDonReturned', playerSessionId, card);
+  }
+
+  public emitBattleKo(playerSessionId: string, card: DuelCard): void {
+    this.emitCardEvent('onBattleKo', playerSessionId, card);
+  }
+
+  public getNextPlayCostModifier(card: DuelCard): number {
+    return this.engine.getNextPlayCostModifier(card);
+  }
+
+  public consumeNextPlayCostModifier(card: DuelCard): void {
+    this.engine.consumeNextPlayCostModifier(card);
+  }
+
+  public hasCounterEffect(cardId: string): boolean {
+    return this.dispatcher.hasCounterEffect(cardId);
+  }
+
+  public emitCounterUsage(playerSessionId: string, card: DuelCard): void {
+    this.dispatcher.emitCounterUsage(playerSessionId, card);
+  }
+
+  public hasLocalTriggerDefinition(cardId: string): boolean {
+    return this.dispatcher.hasLocalTriggerDefinition(cardId);
+  }
+
+  public resolveRevealedLifeCard(
+    defender: DuelPlayer,
+    revealedCard: DuelCard,
+  ): 'addedToHand' | 'engineTrigger' | 'manualFallback' {
+    return this.lifeCards.resolve(defender, revealedCard);
+  }
+
+  public resolveManualTriggerDecision(
+    playerSessionId: string,
+    activate: boolean,
+  ): { ok: true } | { ok: false; error: string } {
+    return this.manualTriggers.resolveDecision(playerSessionId, activate);
+  }
+}

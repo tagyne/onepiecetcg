@@ -1,0 +1,26 @@
+packages:
+  - 'apps/api'
+  - 'apps/web'
+  - 'packages/cards'
+  - 'packages/duel-engine'
+  - 'packages/effect-engine'
+  - 'packages/shared'
+packageExtensions:
+  colyseus:
+    peerDependenciesMeta:
+      '@colyseus/uwebsockets-transport':
+        optional: true
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true
+  maplibre-gl: true
+  msgpackr-extract: true
+  unrs-resolver: true
+  vue-demi: true
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - esbuild
+  - maplibre-gl
+  - msgpackr-extract
+  - unrs-resolver
+  - vue-demi

@@ -1,0 +1,673 @@
+import type {
+  CardColor,
+  CardType,
+  DuelCard,
+  DuelPlayer,
+  DuelState,
+  GameZone,
+} from './index.js';
+
+export type EffectTriggerType =
+  | 'onPlay'
+  | 'activateMain'
+  | 'activateCounter'
+  | 'onEventActivated'
+  | 'onCardRemovedByEffect'
+  | 'onCharacterPlayed'
+  | 'onDonAttached'
+  | 'onDonReturned'
+  | 'onBattleKo'
+  | 'onLifeDamageDealt'
+  | 'onCardDrawn'
+  | 'whenAttacking'
+  | 'onAttacked'
+  | 'onKo'
+  | 'trigger'
+  | 'onBlock'
+  | 'onTurnStart'
+  | 'onTurnEnd';
+
+export type EffectOwnerSelector = 'self' | 'opponent' | 'either';
+
+export type EffectKeyword =
+  | 'rush'
+  | 'doubleAttack'
+  | 'banish'
+  | 'canAttackActiveCharacters'
+  | 'mustBeAttackTarget'
+  | 'cannotAttack'
+  | 'cannotAttackLeaderOnTurnPlayed'
+  | 'cannotBlock'
+  | 'cannotBeKoedInBattle'
+  | 'cannotBeKoedByEffects'
+  | 'cannotBeKoedBySlashInBattle'
+  | 'cannotBeKoedByStrikeInBattle'
+  | 'cannotBeRemovedByOpponentEffects'
+  | 'winOnDeckOut';
+
+export type EffectCount =
+  | { kind: 'exact'; value: number }
+  | { kind: 'upTo'; value: number }
+  | { kind: 'any' };
+
+export type EffectCondition =
+  | { type: 'controllerTurn'; value: boolean }
+  | { type: 'sourceHasAttachedDonAtLeast'; value: number }
+  | { type: 'sourcePowerAtLeast'; value: number }
+  | { type: 'playerHasLifeAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLessLifeThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | { type: 'playerHasMoreTotalDonThan'; player: EffectOwnerSelector; thanPlayer: EffectOwnerSelector }
+  | {
+      type: 'playerHasAtLeastTotalDonLessThan';
+      player: EffectOwnerSelector;
+      thanPlayer: EffectOwnerSelector;
+      value: number;
+    }
+  | { type: 'playerHasLeaderName'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderTrait'; player: EffectOwnerSelector; value: string }
+  | { type: 'playerHasLeaderColorsAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasTotalDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasTotalDonAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasActiveDonAtLeast'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playerHasLifeAndHandAtMost'; player: EffectOwnerSelector; value: number }
+  | { type: 'playersHaveTotalLifeAtMost'; value: number }
+  | { type: 'playerHasOnlyCharactersWithTrait'; player: EffectOwnerSelector; trait: string }
+  | { type: 'eventPlayerIs'; player: EffectOwnerSelector }
+  | { type: 'eventSourceZoneIs'; value: GameZone }
+  | { type: 'eventDestinationZoneIs'; value: GameZone }
+  | { type: 'eventEffectControllerIs'; player: EffectOwnerSelector }
+  | { type: 'eventPlayedByEffect'; value: boolean }
+  | { type: 'eventReasonIs'; value: 'battle' | 'effect' }
+  | { type: 'eventSourceHasNoBaseEffect' }
+  | { type: 'eventTargetMatchesFilter'; filter: EffectCardFilter }
+  | { type: 'targetExists'; selector: EffectTargetSelector }
+  | { type: 'targetCountAtLeast'; selector: EffectTargetSelector; value: number }
+  | { type: 'targetCountAtMost'; selector: EffectTargetSelector; value: number }
+  | { type: 'cardInZone'; zone: GameZone }
+  | { type: 'sourceIsRested'; value: boolean };
+
+export type EffectCardFilter = {
+  cardCategory?: CardType[];
+  costMax?: number;
+  costMaxFromLifeOf?: EffectOwnerSelector;
+  costMin?: number;
+  baseCostMax?: number;
+  baseCostMin?: number;
+  powerMax?: number;
+  powerMin?: number;
+  basePowerMax?: number;
+  basePowerMin?: number;
+  color?: CardColor[];
+  attribute?: string[];
+  differentColorThanStoredSelection?: string;
+  trait?: string[];
+  traitIncludes?: string[];
+  name?: string[];
+  excludeName?: string[];
+  hasNoBaseEffect?: boolean;
+  hasTrigger?: boolean;
+  rested?: boolean;
+  owner?: EffectOwnerSelector;
+  zonePosition?: 'top' | 'bottom' | 'topOrBottom';
+};
+
+export type EffectTargetSelector = {
+  player: EffectOwnerSelector;
+  chooser?: EffectOwnerSelector;
+  source?: 'effectSource';
+  zones: GameZone[];
+  filter?: EffectCardFilter;
+  count?: EffectCount;
+  distinctBy?: 'name';
+};
+
+export type EffectDuration =
+  | { type: 'untilEndOfTurn' }
+  | { type: 'untilEndOfBattle' }
+  | { type: 'untilStartOfYourNextTurn' }
+  | { type: 'whileSourceInPlay' }
+  | { type: 'permanent' };
+
+export type EffectTrigger = {
+  type: EffectTriggerType;
+  optional?: boolean;
+  oncePerTurn?: boolean;
+};
+
+export type EffectDecisionChoice = {
+  id: string;
+  label: string;
+  cardInstanceId?: string;
+  conditions?: EffectCondition[];
+};
+
+export type EffectDecisionPrompt =
+  | {
+      type: 'confirm';
+      message: string;
+      optional?: boolean;
+    }
+  | {
+      type: 'selectCards';
+      message: string;
+      selector: EffectTargetSelector;
+      min: number;
+      max: number;
+      revealedCards?: string[];
+    }
+  | {
+      type: 'orderCards';
+      message: string;
+      cardInstanceIds: string[];
+      destinationZone: Extract<GameZone, 'deck' | 'life'>;
+    }
+  | {
+      type: 'selectChoice';
+      message: string;
+      choices: EffectDecisionChoice[];
+      min: number;
+      max: number;
+    };
+
+export type PendingEffectDecision = {
+  id: string;
+  effectId: string;
+  effectCardId: string;
+  sourceInstanceId: string;
+  playerSessionId: string;
+  prompt: EffectDecisionPrompt;
+  createdAt: string;
+};
+
+export type EffectDecisionResponse = {
+  decisionId: string;
+  confirmed?: boolean;
+  selectedCardInstanceIds?: string[];
+  orderedCardInstanceIds?: string[];
+  selectedChoiceIds?: string[];
+};
+
+export type EffectAction =
+  | {
+      type: 'draw';
+      player: EffectOwnerSelector;
+      amount: number;
+    }
+  | {
+      type: 'drawUntilHandSize';
+      player: EffectOwnerSelector;
+      size: number;
+    }
+  | {
+      type: 'play';
+      selector: EffectTargetSelector;
+      destination: 'characters' | 'stage';
+      rested?: boolean;
+    }
+  | {
+      type: 'ko';
+      selector: EffectTargetSelector;
+      upTo?: boolean;
+      reason?: 'battle' | 'effect';
+    }
+  | {
+      type: 'koAllCharacters';
+      selector: EffectTargetSelector;
+      excludeSource?: boolean;
+      reason?: 'battle' | 'effect';
+    }
+  | {
+      type: 'trashFromDeck';
+      player: EffectOwnerSelector;
+      amount: number;
+    }
+  | {
+      type: 'trashFromHand';
+      selector: EffectTargetSelector;
+    }
+  | {
+      type: 'rest' | 'unrest' | 'restand';
+      selector: EffectTargetSelector;
+    }
+  | {
+      type: 'addToLife';
+      selector: EffectTargetSelector;
+      player: EffectOwnerSelector;
+    }
+  | {
+      type: 'addDon';
+      player: EffectOwnerSelector;
+      amount: number;
+      rested?: boolean;
+      destination?: 'cost';
+    }
+  | {
+      type: 'removeDon';
+      player: EffectOwnerSelector;
+      amount: number;
+    }
+  | {
+      type: 'reveal';
+      player: EffectOwnerSelector;
+      zone: Extract<GameZone, 'deck' | 'life' | 'hand'>;
+      amount: number;
+      storeAs?: string;
+    }
+  | {
+      type: 'search';
+      player: EffectOwnerSelector;
+      sourceZone: Extract<GameZone, 'deck' | 'trash'>;
+      amount: number;
+      filter: EffectCardFilter;
+      count: EffectCount;
+      destination: Extract<GameZone, 'hand' | 'characters' | 'trash'>;
+      restDestination?: Extract<GameZone, 'deck' | 'trash'>;
+      restToBottom?: boolean;
+      restOrder?: 'player';
+    }
+  | {
+      type: 'moveCard';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
+    }
+  | {
+      type: 'moveFirstCard';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+    }
+  | {
+      type: 'modifyPower';
+      selector: EffectTargetSelector;
+      amount: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'modifyPowerByStoredCount';
+      key: string;
+      selector: EffectTargetSelector;
+      amountPerCard: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'modifyCost';
+      selector: EffectTargetSelector;
+      amount: number;
+      duration: EffectDuration;
+    }
+  | {
+      type: 'grantKeywords';
+      selector: EffectTargetSelector;
+      keywords: EffectKeyword[];
+      duration: EffectDuration;
+    }
+  | {
+      type: 'preventOwnEffectLifeToHand';
+      player: EffectOwnerSelector;
+      duration: Extract<
+        EffectDuration,
+        { type: 'untilEndOfTurn' } | { type: 'untilStartOfYourNextTurn' }
+      >;
+    }
+  | {
+      type: 'restrictAttack';
+      selector: EffectTargetSelector;
+      turns: number;
+    }
+  | {
+      type: 'activateEffect';
+      cardId: string;
+      effectId: string;
+    }
+  | {
+      type: 'attachDon';
+      selector: EffectTargetSelector;
+      player: EffectOwnerSelector;
+      amount: number;
+      rested?: boolean;
+    }
+  | {
+      type: 'detachDon';
+      selector: EffectTargetSelector;
+      amount: number;
+    }
+  | {
+      type: 'shuffleDeck';
+      player: EffectOwnerSelector;
+    }
+  | {
+      type: 'arrangeDeckWindow';
+      player: EffectOwnerSelector;
+      amount: number;
+    }
+  | {
+      type: 'revealTopAndPlayIfMatches';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      destination: 'characters' | 'stage';
+      rested?: boolean;
+    }
+  | {
+      type: 'storeSelectedCards';
+      key: string;
+      selector: EffectTargetSelector;
+    }
+  | {
+      type: 'revealStoredCards';
+      key: string;
+    }
+  | {
+      type: 'moveStoredCards';
+      key: string;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+      chooseDestinationPosition?: boolean;
+    }
+  | {
+      type: 'scheduleMoveAtEndOfBattle';
+      selector: EffectTargetSelector;
+      destinationPlayer: EffectOwnerSelector | 'selectedCardOwner';
+      destinationZone: GameZone;
+      faceDown?: boolean;
+      rested?: boolean;
+      toBottom?: boolean;
+    }
+  | {
+      type: 'skipNextRefreshPhases';
+      selector: EffectTargetSelector;
+      amount: number;
+    }
+  | {
+      type: 'ifStoredSelectionMatches';
+      key: string;
+      filter: EffectCardFilter;
+      actions: EffectAction[];
+    }
+  | {
+      type: 'ifConditionsMatch';
+      conditions: EffectCondition[];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'ifAnyConditionGroupMatches';
+      conditionGroups: EffectCondition[][];
+      actions: EffectAction[];
+    }
+  | {
+      type: 'modifyStoredCardsPower';
+      key: string;
+      amount: number;
+      duration: EffectDuration;
+      description?: string;
+    }
+  | {
+      type: 'registerNextPlayCostModifier';
+      player: EffectOwnerSelector;
+      filter: EffectCardFilter;
+      sourceZone: 'hand';
+      amount: number;
+    }
+  | {
+      type: 'chooseActionBranch';
+      message: string;
+      choices: Array<{
+        id: string;
+        label: string;
+        conditions?: EffectCondition[];
+        actions: EffectAction[];
+      }>;
+    }
+  | {
+      type: 'scheduleActionsAtTurnEnd';
+      actions: EffectAction[];
+    }
+  | {
+      type: 'returnDonToDonDeckMatchingOpponentCount';
+      player: EffectOwnerSelector;
+      referencePlayer: EffectOwnerSelector;
+    };
+
+export type StandardEffectDefinition = {
+  id: string;
+  text: string;
+  trigger: EffectTrigger;
+  conditions?: EffectCondition[];
+  costs?: EffectAction[];
+  actions: EffectAction[];
+};
+
+export type ContinuousEffectDefinition = {
+  id: string;
+  text: string;
+  conditions?: EffectCondition[];
+  modifier: {
+    selector: EffectTargetSelector;
+    power?: number;
+    cost?: number;
+    powerPerCount?:
+      | {
+          selector: EffectTargetSelector;
+          amount: number;
+          divisor?: number;
+        }
+      | undefined;
+    keywords?: EffectKeyword[];
+    skipNextRefreshPhases?: number;
+  };
+};
+
+export type ReplacementEffectDefinition = {
+  id: string;
+  text: string;
+  event: 'wouldKoCharacter' | 'wouldMoveCard';
+  optional?: boolean;
+  oncePerTurn?: boolean;
+  conditions?: EffectCondition[];
+  replacement: EffectAction[];
+  priority?: number;
+};
+
+export type CardEffectDefinition = {
+  cardId: string;
+  standard?: StandardEffectDefinition[];
+  continuous?: ContinuousEffectDefinition[];
+  replacements?: ReplacementEffectDefinition[];
+  specialHandlerId?: string;
+};
+
+export type SpecialHandlerId = string;
+
+export type CardEffectEntry =
+  | {
+      kind: 'standard';
+      effect: StandardEffectDefinition;
+    }
+  | {
+      kind: 'continuous';
+      effect: ContinuousEffectDefinition;
+    }
+  | {
+      kind: 'replacement';
+      effect: ReplacementEffectDefinition;
+    }
+  | {
+      kind: 'special-ref';
+      specialHandlerId: SpecialHandlerId;
+    };
+
+export interface CardEffectSource {
+  cardId: string;
+  effects?: readonly CardEffectEntry[];
+}
+
+export interface EditionEffectDefinitions {
+  editionId: string;
+  cards: readonly CardEffectSource[];
+}
+
+export type EffectEventType = EffectTriggerType;
+
+export type EffectEvent = {
+  type: EffectEventType;
+  playerSessionId: string;
+  sourceInstanceId: string;
+  sourceCardId: string;
+  targetInstanceId?: string;
+  targetCardId?: string;
+  sourceZone?: GameZone;
+  destinationZone?: GameZone;
+  effectControllerSessionId?: string;
+  playedByEffect?: boolean;
+};
+
+export type EffectEngineCardStatusPatch = {
+  faceDown?: boolean;
+  rested?: boolean;
+  playedThisTurn?: boolean;
+  cannotAttack?: boolean;
+  cannotAttackLeaderOnTurnPlayed?: boolean;
+  cannotBlock?: boolean;
+  cannotBeKoedInBattle?: boolean;
+  cannotBeKoedByEffects?: boolean;
+  cannotBeKoedBySlashInBattle?: boolean;
+  cannotBeKoedByStrikeInBattle?: boolean;
+  hasRush?: boolean;
+  hasDoubleAttack?: boolean;
+  hasBanish?: boolean;
+  canAttackActiveCharacters?: boolean;
+  mustBeAttackTarget?: boolean;
+  winOnDeckOut?: boolean;
+  cannotBeRemovedByOpponentEffects?: boolean;
+  effectNegated?: boolean;
+  cannotAttackUntilTurn?: number;
+  skipNextRefreshPhases?: number;
+};
+
+export type EffectEngineCardStatPatch = {
+  baseCost?: number;
+  basePower?: number;
+  power?: number;
+  cost?: number;
+  attachedDon?: number;
+};
+
+export interface SpecialEffectHandlerEngine {
+  state: DuelState;
+  getPlayer(sessionId: string): DuelPlayer | undefined;
+  getOpponentSessionId(sessionId: string): string | null;
+  getCard(instanceId: string): DuelCard | null;
+  getCards(
+    selector: EffectTargetSelector,
+    controllerSessionId: string,
+  ): DuelCard[];
+  addLog(message: string): void;
+  patchCardStatus(
+    instanceId: string,
+    patch: EffectEngineCardStatusPatch,
+  ): DuelCard | null | undefined;
+  patchCardStats(
+    instanceId: string,
+    patch: EffectEngineCardStatPatch,
+  ): DuelCard | null | undefined;
+  patchPlayerStatus(
+    playerSessionId: string,
+    patch: { cannotPlayCharacters?: boolean },
+  ): DuelPlayer | undefined;
+  playCard(
+    card: DuelCard,
+    playerSessionId: string,
+    zone: 'characters' | 'stage',
+    options?: { rested?: boolean },
+  ): boolean;
+  moveCard(
+    card: DuelCard,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void;
+  setZoneOrder(
+    playerSessionId: string,
+    zone: 'deck' | 'life',
+    orderedInstanceIds: string[],
+    options?: { faceDown?: boolean },
+  ): boolean;
+  addDonToCost(
+    playerSessionId: string,
+    amount: number,
+    rested: boolean,
+  ): number;
+  returnDonToDonDeck(playerSessionId: string, amount: number): number;
+  koCharacter(
+    playerSessionId: string,
+    instanceId: string,
+    reason: 'battle' | 'effect',
+  ): boolean;
+  drawCard(playerSessionId: string): DuelCard | null;
+  trashTopDeckCards(playerSessionId: string, amount: number): DuelCard[];
+  shuffleDeck(playerSessionId: string): void;
+  attachDon(
+    playerSessionId: string,
+    targetInstanceId: string,
+    amount: number,
+    options?: { rested?: boolean },
+  ): number;
+  syncPlayer(playerSessionId: string): void;
+  chooseCards(...args: any[]): void;
+  chooseChoices(...args: any[]): void;
+  pauseDecision(...args: any[]): void;
+  addPowerModifier(...args: any[]): void;
+  addKeywordModifier(...args: any[]): void;
+  addCostModifier(...args: any[]): void;
+  addPlayerRestriction(...args: any[]): void;
+  registerNextPlayCostModifier(...args: any[]): void;
+  hasResolvedOncePerTurnKey(key: string): boolean;
+  markResolvedOncePerTurnKey(key: string): void;
+  arrangeDeckWindow(...args: any[]): void;
+  queueEffect(...args: any[]): void;
+  scheduleTurnEndActions(...args: any[]): void;
+  scheduleTurnEndEffect(sourceInstanceId: string, resolve: () => void): void;
+  scheduleMoveAtEndOfBattle(
+    targetInstanceId: string,
+    destinationPlayerSessionId: string,
+    destinationZone: string,
+    options?: { faceDown?: boolean; rested?: boolean; toBottom?: boolean },
+  ): void;
+  addCannotRestKey(key: string): void;
+  preventDefaultMove(): void;
+  findZoneOfCard(
+    instanceId: string,
+  ): { player: DuelPlayer; zone: GameZone } | null;
+  countTotalDonOnField(playerSessionId: string): number;
+  removeModifier(args: {
+    sourceInstanceId: string;
+    targetInstanceId: string;
+    kind?: 'power' | 'cost' | 'keyword';
+  }): void;
+  effectsByCardId: Readonly<Record<string, CardEffectDefinition>>;
+  reapplyContinuousEffects(): void;
+}
+
+export interface SpecialHandlerDefinition {
+  id: string;
+  cardId: string;
+  resolve(event: EffectEvent, engine: SpecialEffectHandlerEngine): void;
+}
+
+export interface EffectSourceBundle {
+  definitions: readonly EditionEffectDefinitions[];
+  specialHandlers: readonly SpecialHandlerDefinition[];
+}
