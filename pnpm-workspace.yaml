@@ -6,6 +6,7 @@ packages:
   - 'packages/effect-engine'
   - 'packages/shared'
 injectWorkspacePackages: true
+forceLegacyDeploy: true
 packageExtensions:
   colyseus:
     peerDependenciesMeta:

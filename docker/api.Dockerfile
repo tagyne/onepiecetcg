@@ -15,7 +15,7 @@ RUN pnpm --dir apps/api build
 
 # Create a self-contained production directory. Workspace dependencies are
 # copied into this directory instead of being resolved from /packages at runtime.
-RUN pnpm deploy --filter ./apps/api --prod /app/deploy
+RUN pnpm deploy --filter ./apps/api --prod --ignore-scripts /app/deploy
 
 FROM node:22-alpine
 
