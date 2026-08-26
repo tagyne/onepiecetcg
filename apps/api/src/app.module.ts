@@ -46,10 +46,7 @@ import { getApiConfig } from './runtime-config';
       migrations: [join(__dirname, 'migrations/**/*{.js,.ts}')],
       migrationsRun: process.env.NODE_ENV === 'production',
       synchronize: getApiConfig().typeOrmSynchronize,
-      ssl:
-        process.env.NODE_ENV === 'production'
-          ? { rejectUnauthorized: false }
-          : false,
+      ssl: false,
     }),
     PlayerAccountModule,
     CatalogModule,
