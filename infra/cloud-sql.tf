@@ -31,6 +31,10 @@ resource "google_sql_database_instance" "postgres" {
 resource "google_sql_database" "application" {
   name     = "onepiecetcg"
   instance = google_sql_database_instance.postgres.name
+
+  # Drop the database before the application user during terraform destroy.
+  # Otherwise PostgreSQL refuses to drop the user while it owns database objects.
+  depends_on = [google_sql_user.application]
 }
 
 resource "google_sql_user" "application" {
