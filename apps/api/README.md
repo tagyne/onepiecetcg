@@ -34,6 +34,7 @@ Copy `.env.example` to `.env` and adjust as needed. Defaults match the root `doc
 | Variable | Purpose |
 | --- | --- |
 | `API_PORT` | Port the API listens on (default `3000`). |
+| `TYPEORM_SYNCHRONIZE` | Enables TypeORM schema synchronization; use `false` in production. |
 | `WEB_ORIGIN` | Origin of the Nuxt client, for CORS. |
 | `DATABASE_HOST`, `DATABASE_PORT`, `DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME` | Postgres connection. |
 | `DATABASE_URL` | Optional: a single connection string that overrides the `DATABASE_*` fields above. |

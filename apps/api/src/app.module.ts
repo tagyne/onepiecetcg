@@ -34,11 +34,7 @@ import { getApiConfig } from './runtime-config';
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
-      host: getApiConfig().database.host,
-      port: getApiConfig().database.port,
-      username: getApiConfig().database.user,
-      password: getApiConfig().database.password,
-      database: getApiConfig().database.name,
+      url: getApiConfig().databaseUrl,
       entities: [
         BetterAuthAccount,
         BetterAuthSession,
@@ -46,7 +42,7 @@ import { getApiConfig } from './runtime-config';
         BetterAuthVerification,
       ],
       autoLoadEntities: true,
-      synchronize: true,
+      synchronize: getApiConfig().typeOrmSynchronize,
     }),
     PlayerAccountModule,
     CatalogModule,

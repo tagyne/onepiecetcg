@@ -3,6 +3,7 @@ import { getApiConfig } from './runtime-config';
 describe('getApiConfig', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalAnonymousAuthEnabled = process.env.AUTH_ANONYMOUS_ENABLED;
+  const originalTypeOrmSynchronize = process.env.TYPEORM_SYNCHRONIZE;
 
   afterEach(() => {
     process.env.NODE_ENV = originalNodeEnv;
@@ -10,6 +11,11 @@ describe('getApiConfig', () => {
       delete process.env.AUTH_ANONYMOUS_ENABLED;
     } else {
       process.env.AUTH_ANONYMOUS_ENABLED = originalAnonymousAuthEnabled;
+    }
+    if (originalTypeOrmSynchronize === undefined) {
+      delete process.env.TYPEORM_SYNCHRONIZE;
+    } else {
+      process.env.TYPEORM_SYNCHRONIZE = originalTypeOrmSynchronize;
     }
   });
 
@@ -62,6 +68,29 @@ describe('getApiConfig', () => {
       process.env.AUTH_ANONYMOUS_ENABLED = 'false';
 
       expect(getApiConfig().anonymousAuthEnabled).toBe(false);
+    });
+  });
+
+  describe('typeOrmSynchronize', () => {
+    it('defaults to true in development', () => {
+      process.env.NODE_ENV = 'development';
+      delete process.env.TYPEORM_SYNCHRONIZE;
+
+      expect(getApiConfig().typeOrmSynchronize).toBe(true);
+    });
+
+    it('defaults to false in production', () => {
+      process.env.NODE_ENV = 'production';
+      delete process.env.TYPEORM_SYNCHRONIZE;
+
+      expect(getApiConfig().typeOrmSynchronize).toBe(false);
+    });
+
+    it('honors an explicit value', () => {
+      process.env.NODE_ENV = 'production';
+      process.env.TYPEORM_SYNCHRONIZE = 'true';
+
+      expect(getApiConfig().typeOrmSynchronize).toBe(true);
     });
   });
 });

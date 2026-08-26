@@ -51,6 +51,10 @@ export function getApiConfig() {
     port: readNumber('API_PORT', 3000),
     webOrigin: process.env.WEB_ORIGIN ?? 'http://localhost:3001',
     isDevelopment: process.env.NODE_ENV === 'development',
+    typeOrmSynchronize: readBoolean(
+      'TYPEORM_SYNCHRONIZE',
+      process.env.NODE_ENV === 'development',
+    ),
     anonymousAuthEnabled: readAnonymousAuthEnabled(),
     database,
     databaseUrl:
