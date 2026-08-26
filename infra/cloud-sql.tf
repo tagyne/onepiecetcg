@@ -9,7 +9,7 @@ resource "google_sql_database_instance" "postgres" {
   region           = var.region
 
   settings {
-    tier              = "db-custom-1-3840"
+    tier              = "db-perf-optimized-N-2"
     availability_type = "ZONAL"
     disk_type         = "PD_SSD"
     disk_size         = 20
