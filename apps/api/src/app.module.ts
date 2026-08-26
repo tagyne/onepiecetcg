@@ -43,6 +43,10 @@ import { getApiConfig } from './runtime-config';
       ],
       autoLoadEntities: true,
       synchronize: getApiConfig().typeOrmSynchronize,
+      ssl:
+        process.env.NODE_ENV === 'production'
+          ? { rejectUnauthorized: false }
+          : false,
     }),
     PlayerAccountModule,
     CatalogModule,
