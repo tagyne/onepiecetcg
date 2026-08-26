@@ -55,6 +55,7 @@ pids
 # Terraform
 infra/.terraform/
 infra/*.tfstate
+infra/*.tfvars
 infra/*.tfstate.*
 infra/crash.log
 
