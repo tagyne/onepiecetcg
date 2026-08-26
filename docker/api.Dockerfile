@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -13,6 +13,18 @@ RUN pnpm install --frozen-lockfile
 RUN pnpm build:packages
 RUN pnpm --dir apps/api build
 
+# Create a self-contained production directory. Workspace dependencies are
+# copied into this directory instead of being resolved from /packages at runtime.
+RUN pnpm deploy --filter ./apps/api --prod /app/deploy
+
+FROM node:22-alpine
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=build /app/deploy/ ./
+
 EXPOSE 3000
 
-CMD ["pnpm", "--dir", "apps/api", "start:prod"]
+CMD ["node", "dist/main.js"]

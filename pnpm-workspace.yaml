@@ -5,6 +5,7 @@ packages:
   - 'packages/duel-engine'
   - 'packages/effect-engine'
   - 'packages/shared'
+injectWorkspacePackages: true
 packageExtensions:
   colyseus:
     peerDependenciesMeta:
