@@ -26,7 +26,7 @@ pnpm test:e2e           # jest -c test/jest-e2e.json (test/*.e2e-spec.ts)
 
 Run a single unit test file: `pnpm exec jest src/deck/deck.service.spec.ts`. Run a single e2e spec: `pnpm exec jest --config ./test/jest-e2e.json test/app.e2e-spec.ts`.
 
-Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`USER`/`PASSWORD`/`NAME`, or a single `DATABASE_URL`) — copy `.env.example` to `.env` and adjust as needed. `TypeOrmModule` is configured with `synchronize: true` (see `src/app.module.ts`), so entities auto-migrate the schema in this environment; there are no manual migration files.
+Requires a running Postgres instance matching `.env` (`DATABASE_HOST`/`PORT`/`USER`/`PASSWORD`/`NAME`, or a single `DATABASE_URL`) — copy `.env.example` to `.env` and adjust as needed. In production, `TypeOrmModule` runs pending migrations before the application starts; local development keeps `TYPEORM_SYNCHRONIZE=true` by default.
 
 ## Architecture
 

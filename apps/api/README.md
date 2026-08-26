@@ -90,7 +90,10 @@ Card effect text is never interpreted server-side. Only structural fields (`cost
 
 ### Database
 
-`TypeOrmModule` runs with `synchronize: true`, so entities auto-migrate the schema in this environment — there are no manual migration files to run.
+In production, TypeORM runs all pending migrations before Nest starts accepting
+requests (`migrationsRun: true`). Migrations are compiled into the API image
+under `dist/migrations`. Schema synchronization is disabled by default outside
+development; use `TYPEORM_SYNCHRONIZE=true` only for local development.
 
 ## Testing
 

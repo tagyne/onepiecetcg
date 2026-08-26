@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { join } from 'node:path';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -42,6 +43,8 @@ import { getApiConfig } from './runtime-config';
         BetterAuthVerification,
       ],
       autoLoadEntities: true,
+      migrations: [join(__dirname, 'migrations/**/*{.js,.ts}')],
+      migrationsRun: process.env.NODE_ENV === 'production',
       synchronize: getApiConfig().typeOrmSynchronize,
       ssl:
         process.env.NODE_ENV === 'production'
