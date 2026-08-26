@@ -17,6 +17,16 @@ RUN pnpm --dir apps/api build
 # copied into this directory instead of being resolved from /packages at runtime.
 RUN pnpm deploy --filter ./apps/api --prod --ignore-scripts /app/deploy
 
+# pnpm deploy copies local workspace packages but excludes their gitignored
+# build output. Copy the compiled application and workspace artifacts explicitly
+# so the final image has no dependency on the source workspace.
+RUN cp -R apps/api/dist /app/deploy/dist \
+  && for package in cards duel-engine effect-engine shared; do \
+    target="$(readlink -f "/app/deploy/node_modules/@onepiecetcg/$package")"; \
+    mkdir -p "$target/dist"; \
+    cp -R "packages/$package/dist/." "$target/dist/"; \
+  done
+
 FROM node:22-alpine
 
 WORKDIR /app
