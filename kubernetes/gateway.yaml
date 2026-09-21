@@ -3,8 +3,6 @@ kind: Gateway
 metadata:
   name: onepiecetcg-gateway
   namespace: onepiecetcg
-  annotations:
-    networking.gke.io/pre-shared-certs: onepiecetcg-certificate
 spec:
   gatewayClassName: gke-l7-global-external-managed
   addresses:
@@ -20,6 +18,10 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
+      tls:
+        mode: Terminate
+        options:
+          networking.gke.io/pre-shared-certs: onepiecetcg-certificate
       allowedRoutes:
         namespaces:
           from: Same

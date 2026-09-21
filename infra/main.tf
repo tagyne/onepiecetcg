@@ -43,6 +43,8 @@ module "gke" {
 
   project_id                 = var.project_id
   region                     = var.region
+  artifact_registry_location = google_artifact_registry_repository.images.location
+  artifact_registry_repository = google_artifact_registry_repository.images.repository_id
   database_url_secret_id     = google_secret_manager_secret.database_url.id
   better_auth_secret_id      = google_secret_manager_secret.better_auth.id
   google_client_id_secret_id = data.google_secret_manager_secret.google_client_id.id

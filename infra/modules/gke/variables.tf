@@ -8,6 +8,16 @@ variable "region" {
   type        = string
 }
 
+variable "artifact_registry_location" {
+  description = "Location of the shared Artifact Registry repository used by GKE workloads."
+  type        = string
+}
+
+variable "artifact_registry_repository" {
+  description = "Name of the shared Artifact Registry repository used by GKE workloads."
+  type        = string
+}
+
 variable "cluster_name" {
   description = "Name of the GKE Autopilot cluster."
   type        = string
