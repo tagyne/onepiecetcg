@@ -22,7 +22,7 @@ Authentifier Terraform et Docker :
 ```bash
 gcloud auth login
 gcloud auth application-default login
-gcloud auth configure-docker europe-west1-docker.pkg.dev
+gcloud auth configure-docker europe-west9-docker.pkg.dev
 ```
 
 Les secrets OAuth Google doivent exister dans Secret Manager avec les noms
@@ -44,7 +44,7 @@ terraform apply -var-file=terraform.tfvars
 ```
 
 Le module GKE crée le cluster Autopilot `onepiecetcg-gke` dans la région
-`gke_region` et active Secret Sync. Les manifests Kubernetes sont à la racine
+`region` et active Secret Sync. Les manifests Kubernetes sont à la racine
 du projet, dans `kubernetes/`. Remplacer
 `REPLACE_WITH_GCP_PROJECT_ID` dans `kubernetes/secret-provider-class.yaml`,
 puis appliquer les manifests avec :

@@ -41,10 +41,7 @@ module "gke" {
   source = "./modules/gke"
 
   project_id                 = var.project_id
-  region                     = var.gke_region
-  cluster_name               = var.gke_cluster_name
-  kubernetes_namespace       = var.gke_namespace
-  api_service_account_name   = var.gke_api_service_account_name
+  region                     = var.region
   database_url_secret_id     = google_secret_manager_secret.database_url.id
   better_auth_secret_id      = google_secret_manager_secret.better_auth.id
   google_client_id_secret_id = data.google_secret_manager_secret.google_client_id.id

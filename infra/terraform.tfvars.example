@@ -1,7 +1,4 @@
 project_id = "your-gcp-project-id"
-region     = "europe-west1"
-
-# GKE can use a separate region from the existing Cloud Run resources.
-gke_region = "europe-west1"
+region     = "europe-west9"
 
 # Do not commit OAuth values here.

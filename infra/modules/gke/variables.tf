@@ -11,16 +11,19 @@ variable "region" {
 variable "cluster_name" {
   description = "Name of the GKE Autopilot cluster."
   type        = string
+  default     = "onepiecetcg-gke"
 }
 
 variable "kubernetes_namespace" {
   description = "Namespace used by the application workloads."
   type        = string
+  default     = "onepiecetcg"
 }
 
 variable "api_service_account_name" {
   description = "Kubernetes ServiceAccount used by the API workload."
   type        = string
+  default     = "onepiecetcg-api"
 }
 
 variable "database_url_secret_id" {
