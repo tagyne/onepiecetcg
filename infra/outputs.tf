@@ -13,25 +13,25 @@ output "api_url" {
 
 output "load_balancer_ip" {
   description = "IP to configure in the OVH DNS zone."
-  value       = module.cloud_run.load_balancer_ip
+  value       = try(module.cloud_run[0].load_balancer_ip, null)
 }
 
 output "gke_cluster_name" {
   description = "Name of the GKE Autopilot cluster."
-  value       = module.gke.cluster_name
+  value       = try(module.gke[0].cluster_name, null)
 }
 
 output "gke_cluster_region" {
   description = "Regional location of the GKE Autopilot cluster."
-  value       = module.gke.region
+  value       = try(module.gke[0].region, null)
 }
 
 output "gke_workload_pool" {
   description = "Workload Identity Federation pool used by the GKE cluster."
-  value       = module.gke.workload_pool
+  value       = try(module.gke[0].workload_pool, null)
 }
 
 output "gke_gateway_ip" {
   description = "Global static IP reserved for the GKE Gateway load balancer."
-  value       = module.gke.gateway_ip
+  value       = try(module.gke[0].gateway_ip, null)
 }

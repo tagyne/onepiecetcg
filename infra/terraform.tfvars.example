@@ -1,4 +1,6 @@
 project_id = "your-gcp-project-id"
 region     = "europe-west9"
+enable_cloud_run = true
+enable_gke = true
 
 # Do not commit OAuth values here.

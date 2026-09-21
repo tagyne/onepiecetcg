@@ -38,6 +38,7 @@ resource "google_project_service" "required" {
 }
 
 module "gke" {
+  count  = var.enable_gke ? 1 : 0
   source = "./modules/gke"
 
   project_id                 = var.project_id
@@ -51,6 +52,7 @@ module "gke" {
 }
 
 module "cloud_run" {
+  count  = var.enable_cloud_run ? 1 : 0
   source = "./modules/cloud-run"
 
   project_id                     = var.project_id
