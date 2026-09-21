@@ -1,0 +1,60 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: onepiecetcg-https-routes
+  namespace: onepiecetcg
+spec:
+  parentRefs:
+    - name: onepiecetcg-gateway
+      sectionName: https
+  hostnames:
+    - optcg.tagyne.fr
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: onepiecetcg-web
+          port: 3001
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: onepiecetcg-api-route
+  namespace: onepiecetcg
+spec:
+  parentRefs:
+    - name: onepiecetcg-gateway
+      sectionName: https
+  hostnames:
+    - api-optcg.tagyne.fr
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: onepiecetcg-api
+          port: 3000
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: onepiecetcg-http-redirect
+  namespace: onepiecetcg
+spec:
+  parentRefs:
+    - name: onepiecetcg-gateway
+      sectionName: http
+  hostnames:
+    - optcg.tagyne.fr
+    - api-optcg.tagyne.fr
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

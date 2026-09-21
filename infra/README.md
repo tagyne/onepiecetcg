@@ -1,13 +1,15 @@
 # One Piece TCG — infrastructure GCP
 
 Cette configuration déploie la production sur Google Cloud : Cloud Run,
-Cloud SQL, Artifact Registry, Secret Manager et un Load Balancer global.
+GKE Autopilot, Cloud SQL, Artifact Registry, Secret Manager et le Load
+Balancer global de Cloud Run.
 
 ## Prérequis
 
 - Terraform >= 1.10
 - Docker démarré localement
 - Git et Google Cloud CLI
+- kubectl
 - un projet GCP avec facturation active
 - un bucket GCS privé pour le state Terraform
 - un client OAuth Google créé dans Google Auth Platform
@@ -41,6 +43,20 @@ terraform plan -var-file=terraform.tfvars
 terraform apply -var-file=terraform.tfvars
 ```
 
+Le module GKE crée le cluster Autopilot `onepiecetcg-gke` dans la région
+`gke_region` et active Secret Sync. Les manifests Kubernetes sont à la racine
+du projet, dans `kubernetes/`. Remplacer
+`REPLACE_WITH_GCP_PROJECT_ID` dans `kubernetes/secret-provider-class.yaml`,
+puis appliquer les manifests avec :
+
+```bash
+kubectl apply -k kubernetes/
+```
+
+Le Deployment API utilise le Kubernetes Secret `api-secrets`, créé par la
+ressource `SecretSync`, pour injecter les secrets Secret Manager dans ses
+variables d'environnement.
+
 Après l'apply, ajouter chez OVH les enregistrements DNS suivants avec la valeur
 de l'output `load_balancer_ip` :
 
@@ -50,6 +66,11 @@ api-optcg   A    <load_balancer_ip>
 ```
 
 Le certificat HTTPS géré par Google devient actif après propagation DNS.
+
+Le module GKE réserve également une IP globale dédiée, disponible dans
+l'output `gke_gateway_ip`. Lors de la migration vers GKE, faire pointer les
+mêmes domaines vers cette IP. L'output `load_balancer_ip` reste celui du
+Load Balancer Cloud Run.
 
 ## Secrets
 
