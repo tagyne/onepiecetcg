@@ -97,7 +97,7 @@ spec:
             initialDelaySeconds: 15
             periodSeconds: 20
         - name: cloud-sql-proxy
-          image: us-docker.pkg.dev/cloud-sql-connectors/cloud-sql-proxy:2.25.4
+          image: gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.25.4
           args:
             - "--structured-logs"
             - "--unix-socket=/cloudsql"
