@@ -76,6 +76,9 @@ spec:
           volumeMounts:
             - name: tmp
               mountPath: /tmp
+            - name: cloudsql
+              mountPath: /cloudsql
+              readOnly: true
           startupProbe:
             httpGet:
               path: /
@@ -93,8 +96,32 @@ spec:
               port: http-api
             initialDelaySeconds: 15
             periodSeconds: 20
+        - name: cloud-sql-proxy
+          image: us-docker.pkg.dev/cloud-sql-connectors/cloud-sql-proxy:2.25.4
+          args:
+            - "--structured-logs"
+            - "--unix-socket=/cloudsql"
+            - "decouverte-gke:europe-west9:onepiecetcg-postgres"
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: cloudsql
+              mountPath: /cloudsql
       volumes:
         - name: tmp
+          emptyDir: {}
+        - name: cloudsql
           emptyDir: {}
 ---
 apiVersion: v1
