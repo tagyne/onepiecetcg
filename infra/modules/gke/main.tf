@@ -32,6 +32,10 @@ resource "google_container_cluster" "this" {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
+  secret_manager_config {
+    enabled = true
+  }
+
   secret_sync_config {
     enabled = true
   }
