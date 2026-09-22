@@ -25,6 +25,8 @@ packages/
   duel-engine/
   effect-engine/
 docs/      # Product spec, OPTCG gameplay rules, delivery plan
+infra/     # Terraform GCP: shared resources, Cloud Run and GKE modules
+kubernetes/ # Kubernetes manifests deployed on GKE
 ```
 
 Each package has its own README with commands and architecture notes:
@@ -79,6 +81,17 @@ Once running:
 - API: [http://localhost:3000](http://localhost:3000)
 
 Sign in locally from `/login` with the anonymous development shortcut, or configure Google/Discord OAuth credentials in `apps/api/.env` if you want to test those flows too (see [apps/api/README.md](apps/api/README.md#authentication)).
+
+## Deploy to GKE
+
+The production GKE deployment is documented in [infra/README.md](infra/README.md). The short version is:
+
+1. Configure `infra/terraform.tfvars` and create the GCP infrastructure with Terraform.
+2. Fetch credentials for the regional Autopilot cluster.
+3. Apply the manifests in [kubernetes/](kubernetes/) and set the Artifact Registry image tag produced by Terraform.
+4. Verify Secret Sync, the Cloud SQL Auth Proxy, the Gateway and DNS.
+
+Cloud Run and GKE can be toggled independently with `enable_cloud_run` and `enable_gke`. The shared Cloud SQL, Secret Manager and Artifact Registry resources remain in the root Terraform module.
 
 ## Common workflows
 
